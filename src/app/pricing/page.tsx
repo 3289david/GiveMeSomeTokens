@@ -11,7 +11,7 @@ const PLANS = [
     fee: "5% platform fee",
     features: [
       "Unlimited token receives",
-      "All AI providers",
+      "All 14 AI providers",
       "Public creator profile",
       "Goals and projects",
       "GMT API key",
@@ -20,6 +20,7 @@ const PLANS = [
     cta: "Get started",
     href: "/login?mode=register",
     highlight: false,
+    badge: null,
   },
   {
     name: "Pro",
@@ -32,12 +33,13 @@ const PLANS = [
       "Advanced analytics",
       "GMT Connect OAuth apps",
       "Subscription tiers for supporters",
-      "Custom profile badge",
+      "Custom Pro badge",
       "Priority support",
     ],
-    cta: "Coming soon",
-    href: "#",
+    cta: "Upgrade to Pro",
+    href: "/dashboard/plan",
     highlight: true,
+    badge: "Most Popular",
   },
   {
     name: "Team",
@@ -47,14 +49,15 @@ const PLANS = [
     features: [
       "Everything in Pro",
       "Team token pooling",
-      "Shared wallet",
-      "Multiple team members",
+      "Shared wallet (10 members)",
+      "Team analytics dashboard",
       "Invoicing and billing",
       "SLA support",
     ],
-    cta: "Coming soon",
-    href: "#",
+    cta: "Upgrade to Team",
+    href: "/dashboard/plan",
     highlight: false,
+    badge: null,
   },
 ];
 
@@ -71,9 +74,9 @@ export default function PricingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLANS.map((plan) => (
             <Card key={plan.name} className={plan.highlight ? "border-orange-500/50" : ""}>
-              {plan.highlight && (
+              {plan.badge && (
                 <div className="text-center text-xs font-semibold text-orange-400 bg-orange-500/10 py-1.5 rounded-t-xl border-b border-orange-500/30">
-                  Most Popular
+                  {plan.badge}
                 </div>
               )}
               <CardHeader>
@@ -96,12 +99,11 @@ export default function PricingPage() {
                   ))}
                 </ul>
                 <Button
-                  asChild={plan.href !== "#"}
+                  asChild
                   className="w-full"
                   variant={plan.highlight ? "default" : "outline"}
-                  disabled={plan.href === "#"}
                 >
-                  {plan.href !== "#" ? <Link href={plan.href}>{plan.cta}</Link> : <span>{plan.cta}</span>}
+                  <Link href={plan.href}>{plan.cta}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -110,6 +112,7 @@ export default function PricingPage() {
 
         <div className="mt-12 text-center">
           <h2 className="text-lg font-semibold mb-4">Creator Tiers</h2>
+          <p className="text-zinc-500 text-sm mb-6">Earn badges based on total tokens received from your supporters.</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { tier: "Bronze", threshold: "100M+", color: "text-amber-500" },
@@ -123,6 +126,14 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-12 rounded-xl border border-zinc-800 bg-zinc-900 p-6 text-center">
+          <h3 className="font-semibold mb-2">14 AI providers, one wallet</h3>
+          <p className="text-zinc-400 text-sm">Claude, GPT, Gemini, Grok, Mistral, DeepSeek, Cohere, Perplexity, Together, Fireworks, Cerebras, AI21, Groq, and OpenRouter — all in one place.</p>
+          <Button asChild variant="outline" className="mt-4">
+            <Link href="/providers">View all providers →</Link>
+          </Button>
         </div>
       </div>
     </div>

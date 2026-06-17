@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { isPro } from "@/lib/plan";
+import Link from "next/link";
 
 interface OAuthApp { id: string; name: string; clientId: string; redirectUris: string[]; scopes: string[]; createdAt: string }
 
@@ -11,14 +13,19 @@ const SCOPES = ["read_balance", "use_provider", "payment", "subscription", "read
 
 export default function ConnectPage() {
   const [apps, setApps] = useState<OAuthApp[]>([]);
+  const [plan, setPlan] = useState<string>("free");
   const [name, setName] = useState("");
   const [redirectUri, setRedirectUri] = useState("");
   const [scopes, setScopes] = useState<string[]>(["read_balance"]);
   const [loading, setLoading] = useState(false);
   const [newApp, setNewApp] = useState<{ clientId: string; clientSecret: string } | null>(null);
 
+  useEffect(() => {
+    fetch("/api/plan").then(r => r.json()).then(d => setPlan(d.plan ?? "free"));
+    fetch("/api/oauth/apps").then(r => r.json()).then(d => setApps(d.apps ?? []));
+  }, []);
+
   const load = () => fetch("/api/oauth/apps").then(r => r.json()).then(d => setApps(d.apps ?? []));
-  useEffect(() => { load(); }, []);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +42,27 @@ export default function ConnectPage() {
       else toast.error(d.error || "Failed to create app");
     } finally { setLoading(false); }
   };
+
+  if (!isPro(plan)) {
+    return (
+      <div className="p-4 sm:p-8 max-w-3xl">
+        <h1 className="text-2xl font-bold mb-2">GMT Connect</h1>
+        <p className="text-zinc-500 text-sm mb-8">
+          Create OAuth apps so other services can use &quot;Login with GiveMeSomeTokens&quot; and access user token balances.
+        </p>
+        <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-8 text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-lg font-semibold mb-2">Pro feature</h2>
+          <p className="text-zinc-400 text-sm mb-6 max-w-md mx-auto">
+            GMT Connect OAuth apps are available on the Pro plan. Upgrade to create apps that let other services authenticate users and access token balances.
+          </p>
+          <Button asChild>
+            <Link href="/dashboard/plan">Upgrade to Pro — $9/mo</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-8 max-w-3xl">

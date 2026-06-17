@@ -2,7 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { Nav } from "@/components/nav";
 import { Button } from "@/components/ui/button";
-import { GmtLogo, ClaudeIcon, OpenAIIcon, GeminiIcon, FuelIcon } from "@/components/icons";
+import { GmtLogo, ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon, XAIIcon, MistralIcon, DeepSeekIcon, CohereIcon, PerplexityIcon, TogetherIcon, FireworksIcon, CerebrasIcon, AI21Icon, FuelIcon } from "@/components/icons";
 import { formatTokens, providerLabel } from "@/lib/utils";
 
 async function getRecentSupports() {
@@ -48,7 +48,7 @@ export default async function HomePage() {
             <span className="gmt-gradient-text"> AI tokens</span>
           </h1>
           <p className="text-base sm:text-xl text-zinc-400 mb-8 sm:mb-10 max-w-2xl mx-auto px-2">
-            The platform for AI builders. Support your favorite creators with Claude, GPT, Gemini, and OpenRouter credits instead of money.
+            The platform for AI builders. Support your favorite creators with Claude, GPT, Gemini, Grok, Mistral, DeepSeek, and 8 more AI providers — instead of money.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <Button asChild size="xl" className="w-full sm:w-auto">
@@ -63,7 +63,7 @@ export default async function HomePage() {
             <span className="w-px h-4 bg-zinc-800 hidden sm:block" />
             <span><strong className="text-zinc-300">{stats.totalSupports}</strong> supports sent</span>
             <span className="w-px h-4 bg-zinc-800 hidden sm:block" />
-            <span>4 AI providers</span>
+            <span>14 AI providers</span>
           </div>
         </div>
       </section>
@@ -111,7 +111,7 @@ export default async function HomePage() {
               {
                 step: "01",
                 title: "Connect your AI keys",
-                desc: "Link your Claude, OpenAI, Gemini, or OpenRouter API keys. We store them encrypted — creators never see them.",
+                desc: "Link your Claude, OpenAI, Gemini, Groq, Mistral, DeepSeek, or any of 14 providers. We store them encrypted — creators never see them.",
               },
               {
                 step: "02",
@@ -136,25 +136,38 @@ export default async function HomePage() {
 
       {/* Providers */}
       <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Every major AI provider</h2>
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">14 AI providers supported</h2>
           <p className="text-zinc-400 mb-10">Support creators with the tokens they actually use.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             {[
-              { icon: <ClaudeIcon className="w-8 h-8" />, name: "Claude", sub: "Anthropic" },
-              { icon: <OpenAIIcon className="w-8 h-8" />, name: "GPT", sub: "OpenAI" },
-              { icon: <GeminiIcon className="w-8 h-8" />, name: "Gemini", sub: "Google" },
-              { icon: <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#c084fc" opacity="0.15"/><path d="M4 8h16M4 12h12M4 16h8" stroke="#c084fc" strokeWidth="1.8" strokeLinecap="round"/></svg>, name: "OpenRouter", sub: "Multi-provider" },
+              { icon: <ClaudeIcon className="w-7 h-7" />, name: "Claude", sub: "Anthropic" },
+              { icon: <OpenAIIcon className="w-7 h-7" />, name: "GPT", sub: "OpenAI" },
+              { icon: <GeminiIcon className="w-7 h-7" />, name: "Gemini", sub: "Google" },
+              { icon: <OpenRouterIcon className="w-7 h-7" />, name: "OpenRouter", sub: "Multi" },
+              { icon: <GroqIcon className="w-7 h-7" />, name: "Groq", sub: "Groq" },
+              { icon: <XAIIcon className="w-7 h-7" />, name: "Grok", sub: "xAI" },
+              { icon: <MistralIcon className="w-7 h-7" />, name: "Mistral", sub: "Mistral AI" },
+              { icon: <DeepSeekIcon className="w-7 h-7" />, name: "DeepSeek", sub: "DeepSeek" },
+              { icon: <CohereIcon className="w-7 h-7" />, name: "Cohere", sub: "Cohere" },
+              { icon: <PerplexityIcon className="w-7 h-7" />, name: "Perplexity", sub: "Perplexity" },
+              { icon: <TogetherIcon className="w-7 h-7" />, name: "Together", sub: "Together AI" },
+              { icon: <FireworksIcon className="w-7 h-7" />, name: "Fireworks", sub: "Fireworks" },
+              { icon: <CerebrasIcon className="w-7 h-7" />, name: "Cerebras", sub: "Cerebras" },
+              { icon: <AI21Icon className="w-7 h-7" />, name: "AI21", sub: "AI21 Labs" },
             ].map((p) => (
-              <div key={p.name} className="flex flex-col items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+              <div key={p.name} className="flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
                 {p.icon}
                 <div>
-                  <div className="font-semibold">{p.name}</div>
+                  <div className="font-semibold text-sm">{p.name}</div>
                   <div className="text-xs text-zinc-500">{p.sub}</div>
                 </div>
               </div>
             ))}
           </div>
+          <p className="text-zinc-600 text-sm mt-6">
+            <Link href="/providers" className="hover:text-zinc-400 underline underline-offset-2">View all providers and supported models →</Link>
+          </p>
         </div>
       </section>
 
@@ -169,6 +182,7 @@ export default async function HomePage() {
             <Link href="/explore" className="hover:text-zinc-300">Explore</Link>
             <Link href="/pricing" className="hover:text-zinc-300">Pricing</Link>
             <Link href="/providers" className="hover:text-zinc-300">Providers</Link>
+            <Link href="/docs" className="hover:text-zinc-300">Docs</Link>
           </div>
           <div className="text-sm text-zinc-600">givemesometokens.dev</div>
         </div>

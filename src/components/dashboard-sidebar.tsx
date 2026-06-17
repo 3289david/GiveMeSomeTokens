@@ -15,14 +15,17 @@ const navLinks = [
   { href: "/dashboard/usage", label: "Usage", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
   { href: "/dashboard/profile", label: "Profile", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
   { href: "/dashboard/connect", label: "GMT Connect", icon: "M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+  { href: "/dashboard/team", label: "Team", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+  { href: "/dashboard/plan", label: "Plan & Billing", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
 ];
 
 interface DashboardSidebarProps {
   email: string;
   username?: string | null;
+  plan?: string | null;
 }
 
-function SidebarContent({ email, username, onNavigate }: DashboardSidebarProps & { onNavigate?: () => void }) {
+function SidebarContent({ email, username, plan, onNavigate }: DashboardSidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -56,8 +59,18 @@ function SidebarContent({ email, username, onNavigate }: DashboardSidebarProps &
         })}
       </nav>
       <div className="p-4 border-t border-zinc-800">
-        <div className="text-xs text-zinc-600">Signed in as</div>
-        <div className="text-sm text-zinc-400 truncate mt-0.5">{email}</div>
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-zinc-600">Signed in as</div>
+          {plan && plan !== "free" && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 font-medium capitalize">{plan}</span>
+          )}
+          {(!plan || plan === "free") && (
+            <Link href="/dashboard/plan" onClick={onNavigate} className="text-xs text-zinc-600 hover:text-orange-400 transition-colors">
+              Upgrade
+            </Link>
+          )}
+        </div>
+        <div className="text-sm text-zinc-400 truncate">{email}</div>
         {username && (
           <Link href={`/@${username}`} onClick={onNavigate} className="text-xs text-orange-400 hover:underline mt-1 block">
             View public profile
@@ -68,7 +81,7 @@ function SidebarContent({ email, username, onNavigate }: DashboardSidebarProps &
   );
 }
 
-export function DashboardSidebar({ email, username }: DashboardSidebarProps) {
+export function DashboardSidebar({ email, username, plan }: DashboardSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
@@ -78,7 +91,7 @@ export function DashboardSidebar({ email, username }: DashboardSidebarProps) {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-60 border-r border-zinc-800 bg-zinc-900 flex-col flex-shrink-0 min-h-screen">
-        <SidebarContent email={email} username={username} />
+        <SidebarContent email={email} username={username} plan={plan} />
       </aside>
 
       {/* Mobile top bar */}
@@ -114,7 +127,7 @@ export function DashboardSidebar({ email, username }: DashboardSidebarProps) {
                 </svg>
               </button>
             </div>
-            <SidebarContent email={email} username={username} onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent email={email} username={username} plan={plan} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}

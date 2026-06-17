@@ -19,6 +19,7 @@ export function NavClient({ isLoggedIn, username }: NavClientProps) {
     { href: "/leaderboard", label: "Leaderboard" },
     { href: "/providers", label: "Providers" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/docs", label: "Docs" },
     { href: "/marketplace", label: "Marketplace" },
   ];
 

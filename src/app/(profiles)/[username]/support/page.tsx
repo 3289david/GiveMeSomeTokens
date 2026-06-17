@@ -103,6 +103,52 @@ export default function SupportPage() {
 
   if (status === "loading") return null;
 
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-zinc-950 py-10 px-4">
+        <div className="max-w-lg mx-auto">
+          <Link href={`/@${username}`} className="text-sm text-zinc-500 hover:text-zinc-300 mb-6 block">
+            Back to @{username}
+          </Link>
+          <div className="flex items-center gap-3 mb-8">
+            <FuelIcon className="w-6 h-6 text-orange-400" />
+            <div>
+              <h1 className="text-xl font-bold">Fuel {creatorName}</h1>
+              <p className="text-sm text-zinc-500">Send AI tokens instead of money</p>
+            </div>
+          </div>
+          <Card className="border-orange-500/30">
+            <CardContent className="pt-8 pb-8 text-center">
+              <div className="text-4xl mb-4">🔑</div>
+              <h2 className="text-lg font-semibold mb-2">Sign in to send tokens</h2>
+              <p className="text-zinc-400 text-sm mb-6 max-w-xs mx-auto">
+                Create a free account, connect your AI provider key, and fuel {creatorName} with tokens.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild>
+                  <Link href={`/login?mode=register&callbackUrl=/@${username}/support`}>Create free account</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href={`/login?callbackUrl=/@${username}/support`}>Sign in</Link>
+                </Button>
+              </div>
+              <div className="mt-6 pt-6 border-t border-zinc-800 space-y-2 text-left max-w-xs mx-auto">
+                {["Connect your Claude, OpenAI, or any of 14 provider keys", "Tokens go straight into the creator's AI wallet", "No middleman — your key stays encrypted"].map(f => (
+                  <div key={f} className="flex items-start gap-2 text-xs text-zinc-500">
+                    <svg className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 py-10 px-4">
       <div className="max-w-lg mx-auto">
@@ -237,13 +283,6 @@ export default function SupportPage() {
             {loading ? "Sending..." : `Send ${finalAmount ? formatTokens(finalAmount) : "?"} ${providerLabel(provider)} tokens`}
           </Button>
 
-          {!session && (
-            <p className="text-center text-sm text-zinc-500">
-              You need to{" "}
-              <Link href="/login" className="text-orange-400 hover:underline">sign in</Link>
-              {" "}to send tokens
-            </p>
-          )}
         </form>
       </div>
     </div>

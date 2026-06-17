@@ -45,10 +45,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
-        (session.user as typeof session.user & { username?: string | null }).username =
-          (user as typeof user & { username?: string | null }).username;
-        (session.user as typeof session.user & { isCreator?: boolean }).isCreator =
-          (user as typeof user & { isCreator?: boolean }).isCreator;
+        const u = user as typeof user & { username?: string | null; isCreator?: boolean; plan?: string };
+        (session.user as typeof session.user & { username?: string | null }).username = u.username;
+        (session.user as typeof session.user & { isCreator?: boolean }).isCreator = u.isCreator;
+        (session.user as typeof session.user & { plan?: string }).plan = u.plan ?? "free";
       }
       return session;
     },
