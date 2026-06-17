@@ -260,7 +260,3 @@ ecosystem.config.js           PM2 cluster config
 ```
 
 ---
-
-## License
-
-MIT
