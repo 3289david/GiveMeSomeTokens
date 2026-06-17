@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  username      String?   @unique
+  bio           String?
+  website       String?
+  github        String?
+  twitter       String?
+  isCreator     Boolean   @default(false)
+  creatorTier   String?
+  supporterTier String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  wallet        Wallet?
+  projects      Project[]
+  goals         Goal[]
+  apiKeys       GmtApiKey[]
+  oauthApps     OAuthApp[]
+
+  supportReceived  Support[]      @relation("SupportedCreator")
+  supportGiven     Support[]      @relation("SupporterUser")
+  subscriptionsSent     Subscription[] @relation("SubscriptionSupporter")
+  subscriptionsReceived Subscription[] @relation("SubscriptionCreator")
+  oauthTokens    OAuthToken[]
+
+  streaks        Streak[]
+  aiUsageLogs    AiUsageLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Wallet {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  claudeBalance   Float    @default(0)
+  openaiBalance   Float    @default(0)
+  geminiBalance   Float    @default(0)
+  openrouterBalance Float  @default(0)
+  groqBalance     Float    @default(0)
+
+  claudeKeyEnc    String?  @db.Text
+  openaiKeyEnc    String?  @db.Text
+  geminiKeyEnc    String?  @db.Text
+  openrouterKeyEnc String? @db.Text
+  groqKeyEnc      String?  @db.Text
+
+  autoRefillEnabled   Boolean @default(false)
+  autoRefillThreshold Float   @default(0)
+  autoRefillAmount    Float   @default(0)
+  autoRefillProvider  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Support {
+  id          String   @id @default(cuid())
+  supporterId String
+  creatorId   String
+  projectId   String?
+  provider    String
+  amount      Float
+  message     String?
+  isAnonymous Boolean  @default(false)
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  supporter   User     @relation("SupporterUser", fields: [supporterId], references: [id])
+  creator     User     @relation("SupportedCreator", fields: [creatorId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  creatorId   String
+  name        String
+  description String?
+  creator     User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  supports    Support[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Goal {
+  id            String   @id @default(cuid())
+  creatorId     String
+  provider      String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  description   String?
+  completed     Boolean  @default(false)
+  creator       User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model GmtApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  key         String   @unique
+  provider    String?
+  totalTokensUsed Float @default(0)
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs   ApiUsageLog[]
+}
+
+model ApiUsageLog {
+  id         String   @id @default(cuid())
+  keyId      String
+  provider   String
+  model      String
+  tokensUsed Float
+  cost       Float    @default(0)
+  createdAt  DateTime @default(now())
+  key        GmtApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+}
+
+model AiUsageLog {
+  id         String   @id @default(cuid())
+  userId     String
+  provider   String
+  model      String
+  tokensUsed Float
+  isPublic   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  supporterId String
+  creatorId   String
+  provider    String
+  amount      Float
+  tier        String?
+  active      Boolean  @default(true)
+  lastBilledAt DateTime?
+  nextBillAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supporter   User     @relation("SubscriptionSupporter", fields: [supporterId], references: [id])
+  creator     User     @relation("SubscriptionCreator", fields: [creatorId], references: [id])
+}
+
+model OAuthApp {
+  id           String   @id @default(cuid())
+  creatorId    String
+  name         String
+  clientId     String   @unique @default(cuid())
+  clientSecretHash String
+  redirectUris String[]
+  scopes       String[]
+  creator      User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  tokens       OAuthToken[]
+  authCodes    OAuthAuthCode[]
+  createdAt    DateTime @default(now())
+}
+
+model OAuthAuthCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  appId     String
+  userId    String
+  scopes    String[]
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  app       OAuthApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model OAuthToken {
+  id          String   @id @default(cuid())
+  userId      String
+  appId       String
+  accessToken String   @unique
+  scopes      String[]
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app         OAuthApp @relation(fields: [appId], references: [id], onDelete: Cascade)
+}
+
+model Streak {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  count     Int      @default(0)
+  lastDate  DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, type])
+}
+
+model MarketplaceItem {
+  id          String   @id @default(cuid())
+  creatorId   String
+  name        String
+  description String?
+  type        String
+  price       Float
+  priceProvider String
+  content     String?  @db.Text
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  purchases   MarketplacePurchase[]
+}
+
+model MarketplacePurchase {
+  id        String   @id @default(cuid())
+  buyerId   String
+  itemId    String
+  provider  String
+  amount    Float
+  createdAt DateTime @default(now())
+  item      MarketplaceItem @relation(fields: [itemId], references: [id])
+}
