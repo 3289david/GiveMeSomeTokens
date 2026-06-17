@@ -6,12 +6,12 @@ module.exports = {
       name: "givemesometokens",
       script: "node_modules/.bin/next",
       args: "start",
-      cwd: "/var/www/givemesometokens",
+      cwd: "/root/GiveMeSomeTokens",
       instances: "max",
       exec_mode: "cluster",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 4008,
       },
       // Auto-restart on crash
       autorestart: true,

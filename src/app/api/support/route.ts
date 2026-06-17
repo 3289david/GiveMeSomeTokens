@@ -16,6 +16,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id as string;
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
@@ -25,12 +26,12 @@ export async function POST(req: NextRequest) {
 
   const creator = await db.user.findUnique({ where: { username: creatorUsername } });
   if (!creator) return NextResponse.json({ error: "Creator not found" }, { status: 404 });
-  if (creator.id === session.user.id) return NextResponse.json({ error: "Cannot support yourself" }, { status: 400 });
+  if (creator.id === userId) return NextResponse.json({ error: "Cannot support yourself" }, { status: 400 });
 
   const balanceField = BALANCE_FIELD[provider];
 
   // Check supporter wallet balance
-  const wallet = await db.wallet.findUnique({ where: { userId: session.user.id } });
+  const wallet = await db.wallet.findUnique({ where: { userId: userId } });
   if (!wallet) return NextResponse.json({ error: "Wallet not found — connect API keys first" }, { status: 400 });
 
   const currentBalance = (wallet as Record<string, unknown>)[balanceField] as number;
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   // Transaction: deduct from supporter, add to creator
   await db.$transaction(async (tx) => {
     await tx.wallet.update({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       data: { [balanceField]: { decrement: amount } },
     });
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     await tx.support.create({
       data: {
-        supporterId: session.user.id,
+        supporterId: userId,
         creatorId: creator.id,
         provider,
         amount,
@@ -94,8 +95,8 @@ export async function POST(req: NextRequest) {
 
     // Update supporter streak
     await tx.streak.upsert({
-      where: { userId_type: { userId: session.user.id, type: "support" } },
-      create: { userId: session.user.id, type: "support", count: 1, lastDate: new Date() },
+      where: { userId_type: { userId: userId, type: "support" } },
+      create: { userId: userId, type: "support", count: 1, lastDate: new Date() },
       update: { count: { increment: 1 }, lastDate: new Date() },
     });
   });

@@ -12,7 +12,7 @@ export default function OnboardingPage() {
 
   // If user already has a username, skip onboarding
   useEffect(() => {
-    const user = session?.user as typeof session?.user & { username?: string | null } | undefined;
+    const user = session?.user as ({ username?: string | null } & Record<string, unknown>) | undefined;
     if (user?.username) {
       router.replace("/dashboard");
     }

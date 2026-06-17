@@ -6,6 +6,7 @@ import { BALANCE_FIELD } from "@/lib/utils";
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id as string;
 
   const { itemId } = await req.json();
   if (!itemId) return NextResponse.json({ error: "Missing itemId" }, { status: 400 });
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
   const item = await db.marketplaceItem.findUnique({ where: { id: itemId } });
   if (!item || !item.published) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 
-  const wallet = await db.wallet.findUnique({ where: { userId: session.user.id } });
+  const wallet = await db.wallet.findUnique({ where: { userId: userId } });
   if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 400 });
 
   const balanceField = BALANCE_FIELD[item.priceProvider];
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   await db.$transaction(async (tx) => {
     await tx.wallet.update({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       data: { [balanceField]: { decrement: item.price } },
     });
     await tx.wallet.upsert({
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       update: { [balanceField]: { increment: item.price } },
     });
     await tx.marketplacePurchase.create({
-      data: { buyerId: session.user.id, itemId, provider: item.priceProvider, amount: item.price },
+      data: { buyerId: userId, itemId, provider: item.priceProvider, amount: item.price },
     });
   });
 

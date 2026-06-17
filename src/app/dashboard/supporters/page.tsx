@@ -6,7 +6,7 @@ import { formatTokens, providerLabel } from "@/lib/utils";
 export default async function SupportersPage() {
   const session = await auth();
   const supporters = await db.support.findMany({
-    where: { creatorId: session!.user.id },
+    where: { creatorId: session!.user!.id },
     include: { supporter: { select: { name: true, username: true, image: true } } },
     orderBy: { createdAt: "desc" },
     take: 100,

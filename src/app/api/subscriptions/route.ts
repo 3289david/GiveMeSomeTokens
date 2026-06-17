@@ -8,14 +8,15 @@ import { addMonths } from "date-fns";
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id as string;
 
   const [sent, received] = await Promise.all([
     db.subscription.findMany({
-      where: { supporterId: session.user.id, active: true },
+      where: { supporterId: userId, active: true },
       include: { creator: { select: { name: true, username: true } } },
     }),
     db.subscription.findMany({
-      where: { creatorId: session.user.id, active: true },
+      where: { creatorId: userId, active: true },
       include: { supporter: { select: { name: true, username: true } } },
     }),
   ]);
@@ -32,6 +33,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id as string;
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
   const creator = await db.user.findUnique({ where: { username: creatorUsername } });
   if (!creator) return NextResponse.json({ error: "Creator not found" }, { status: 404 });
 
-  const wallet = await db.wallet.findUnique({ where: { userId: session.user.id } });
+  const wallet = await db.wallet.findUnique({ where: { userId: userId } });
   if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 400 });
 
   const balanceField = BALANCE_FIELD[provider];
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   await db.$transaction(async (tx) => {
     await tx.wallet.update({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       data: { [balanceField]: { decrement: amount } },
     });
     await tx.wallet.upsert({
@@ -61,11 +63,11 @@ export async function POST(req: NextRequest) {
       update: { [balanceField]: { increment: amount } },
     });
     await tx.support.create({
-      data: { supporterId: session.user.id, creatorId: creator.id, provider, amount, message: `Monthly subscription (${tier ?? "standard"})`, isPublic: true },
+      data: { supporterId: userId, creatorId: creator.id, provider, amount, message: `Monthly subscription (${tier ?? "standard"})`, isPublic: true },
     });
     await tx.subscription.create({
       data: {
-        supporterId: session.user.id,
+        supporterId: userId,
         creatorId: creator.id,
         provider,
         amount,
@@ -82,8 +84,9 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id as string;
 
   const { id } = await req.json();
-  await db.subscription.updateMany({ where: { id, supporterId: session.user.id }, data: { active: false } });
+  await db.subscription.updateMany({ where: { id, supporterId: userId }, data: { active: false } });
   return NextResponse.json({ ok: true });
 }

@@ -33,10 +33,11 @@ export async function GET(req: NextRequest) {
   }
 
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.id) {
     const returnUrl = encodeURIComponent(req.url);
     return NextResponse.redirect(new URL(`/login?callbackUrl=${returnUrl}`, req.url));
   }
+  const userId = session.user.id as string;
 
   const code = randomBytes(32).toString("hex");
   const scopes = scope.split(" ").filter(Boolean);
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
     data: {
       code,
       appId: app.id,
-      userId: session.user.id,
+      userId,
       scopes,
       expiresAt,
     },

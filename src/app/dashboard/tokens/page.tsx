@@ -15,7 +15,7 @@ const PROVIDERS = [
 
 export default async function TokensPage() {
   const session = await auth();
-  const wallet = await db.wallet.findUnique({ where: { userId: session!.user.id } });
+  const wallet = await db.wallet.findUnique({ where: { userId: session!.user!.id } });
 
   return (
     <div className="p-4 sm:p-8 max-w-3xl">

@@ -5,7 +5,7 @@ import { formatTokens, providerLabel } from "@/lib/utils";
 
 export default async function UsagePage() {
   const session = await auth();
-  const userId = session!.user.id;
+  const userId = session!.user!.id;
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);

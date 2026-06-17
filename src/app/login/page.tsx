@@ -90,7 +90,7 @@ function LoginForm() {
           </Button>
 
           <div className="pt-2">
-            {/* @ts-expect-error altcha web component */}
+            {/* @ts-ignore */}
             <altcha-widget
               challengeurl="/api/altcha"
               style={{ width: "100%" }}
