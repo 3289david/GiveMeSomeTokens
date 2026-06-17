@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-
-const BALANCE_FIELD: Record<string, string> = {
-  claude: "claudeBalance",
-  openai: "openaiBalance",
-  gemini: "geminiBalance",
-  openrouter: "openrouterBalance",
-  groq: "groqBalance",
-};
+import { BALANCE_FIELD } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   const session = await auth();

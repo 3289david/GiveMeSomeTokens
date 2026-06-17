@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" fill="none">
+  <!-- Icon mark -->
+  <rect width="56" height="56" x="4" y="4" rx="12" fill="url(#g)"/>
+  <path d="M12 32C12 22.059 20.059 14 30 14s18 8.059 18 18" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M20 42l10-20 10 20" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M23 36h14" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Wordmark (dark for light backgrounds) -->
+  <text x="76" y="44" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="26" letter-spacing="-1" fill="#09090b">GiveMeSomeTokens</text>
+  <defs>
+    <linearGradient id="g" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f97316"/>
+      <stop offset="0.5" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+</svg>

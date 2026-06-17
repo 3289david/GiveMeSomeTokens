@@ -4,17 +4,29 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatTokens } from "@/lib/utils";
-import { ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon } from "@/components/icons";
+import { formatTokens, ALL_PROVIDERS, BALANCE_FIELD, providerLabel, providerColor } from "@/lib/utils";
+import {
+  ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon,
+  XAIIcon, MistralIcon, DeepSeekIcon, CohereIcon, PerplexityIcon,
+  TogetherIcon, FireworksIcon, CerebrasIcon, AI21Icon,
+} from "@/components/icons";
 import Link from "next/link";
 
-const WALLET_PROVIDERS = [
-  { key: "claudeBalance", label: "Claude", sub: "Anthropic", Icon: ClaudeIcon, color: "text-orange-400", bg: "from-orange-500/10" },
-  { key: "openaiBalance", label: "GPT", sub: "OpenAI", Icon: OpenAIIcon, color: "text-green-400", bg: "from-green-500/10" },
-  { key: "geminiBalance", label: "Gemini", sub: "Google", Icon: GeminiIcon, color: "text-blue-400", bg: "from-blue-500/10" },
-  { key: "openrouterBalance", label: "OpenRouter", sub: "Multi-provider", Icon: OpenRouterIcon, color: "text-purple-400", bg: "from-purple-500/10" },
-  { key: "groqBalance", label: "Groq", sub: "Fast inference", Icon: GroqIcon, color: "text-yellow-400", bg: "from-yellow-500/10" },
-];
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  claude: ClaudeIcon, openai: OpenAIIcon, gemini: GeminiIcon,
+  openrouter: OpenRouterIcon, groq: GroqIcon, xai: XAIIcon,
+  mistral: MistralIcon, deepseek: DeepSeekIcon, cohere: CohereIcon,
+  perplexity: PerplexityIcon, together: TogetherIcon, fireworks: FireworksIcon,
+  cerebras: CerebrasIcon, ai21: AI21Icon,
+};
+
+const BG_MAP: Record<string, string> = {
+  claude: "from-orange-500/10", openai: "from-green-500/10", gemini: "from-blue-500/10",
+  openrouter: "from-purple-500/10", groq: "from-yellow-500/10", xai: "from-zinc-500/10",
+  mistral: "from-rose-500/10", deepseek: "from-sky-500/10", cohere: "from-teal-500/10",
+  perplexity: "from-indigo-500/10", together: "from-pink-500/10", fireworks: "from-amber-500/10",
+  cerebras: "from-red-500/10", ai21: "from-cyan-500/10",
+};
 
 export default async function WalletPage() {
   const session = await auth();
@@ -22,15 +34,15 @@ export default async function WalletPage() {
 
   const wallet = await db.wallet.findUnique({ where: { userId: session.user.id } });
 
-  const total = WALLET_PROVIDERS.reduce((sum, p) => {
-    const balance = wallet ? (wallet as Record<string, unknown>)[p.key] as number : 0;
-    return sum + balance;
+  const total = ALL_PROVIDERS.reduce((sum, p) => {
+    const balance = wallet ? (wallet as Record<string, unknown>)[BALANCE_FIELD[p]] as number : 0;
+    return sum + (balance ?? 0);
   }, 0);
 
   return (
     <div className="min-h-screen">
       <Nav />
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">AI Wallet</h1>
@@ -47,17 +59,20 @@ export default async function WalletPage() {
           <div className="text-zinc-500 text-sm mt-1">tokens across all providers</div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {WALLET_PROVIDERS.map(({ key, label, sub, Icon, color, bg }) => {
-            const balance = wallet ? (wallet as Record<string, unknown>)[key] as number : 0;
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+          {ALL_PROVIDERS.map((provider) => {
+            const Icon = ICON_MAP[provider];
+            const balance = wallet ? (wallet as Record<string, unknown>)[BALANCE_FIELD[provider]] as number ?? 0 : 0;
+            const color = providerColor(provider);
+            const bg = BG_MAP[provider] ?? "from-zinc-500/10";
             return (
-              <div key={key} className={`rounded-xl border border-zinc-800 bg-gradient-to-br ${bg} to-zinc-900 p-5`}>
+              <div key={provider} className={`rounded-xl border border-zinc-800 bg-gradient-to-br ${bg} to-zinc-900 p-5`}>
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <div className="font-semibold text-sm">{label}</div>
-                    <div className="text-xs text-zinc-500">{sub}</div>
+                    <div className="font-semibold text-sm">{providerLabel(provider)}</div>
+                    <div className="text-xs text-zinc-500">{provider}</div>
                   </div>
-                  <Icon className="w-8 h-8" />
+                  {Icon && <Icon className="w-8 h-8" />}
                 </div>
                 <div className={`text-2xl font-bold font-mono ${color}`}>{formatTokens(balance)}</div>
                 <div className="text-xs text-zinc-600 mt-1">tokens available</div>

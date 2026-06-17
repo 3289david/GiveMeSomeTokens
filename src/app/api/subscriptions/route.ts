@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { BALANCE_FIELD, ALL_PROVIDERS } from "@/lib/utils";
 import { z } from "zod";
 import { addMonths } from "date-fns";
-
-const BALANCE_FIELD: Record<string, string> = {
-  claude: "claudeBalance",
-  openai: "openaiBalance",
-  gemini: "geminiBalance",
-  openrouter: "openrouterBalance",
-  groq: "groqBalance",
-};
 
 export async function GET() {
   const session = await auth();
@@ -31,7 +24,7 @@ export async function GET() {
 
 const schema = z.object({
   creatorUsername: z.string(),
-  provider: z.enum(["claude", "openai", "gemini", "openrouter", "groq"]),
+  provider: z.enum(ALL_PROVIDERS),
   amount: z.number().positive(),
   tier: z.string().optional(),
 });

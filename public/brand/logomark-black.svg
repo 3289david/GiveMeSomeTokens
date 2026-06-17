@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Monochrome black version — for light/colored backgrounds -->
+  <rect width="64" height="64" rx="14" fill="black" fill-opacity="0.08"/>
+  <path d="M12 32C12 22.059 20.059 14 32 14s20 8.059 20 18" stroke="#09090b" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M20 50l12-24 12 24" stroke="#09090b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 42h16" stroke="#09090b" stroke-width="3.5" stroke-linecap="round"/>
+</svg>

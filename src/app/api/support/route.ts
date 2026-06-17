@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { BALANCE_FIELD, ALL_PROVIDERS } from "@/lib/utils";
 import { z } from "zod";
 
 const schema = z.object({
   creatorUsername: z.string(),
-  provider: z.enum(["claude", "openai", "gemini", "openrouter", "groq"]),
+  provider: z.enum(ALL_PROVIDERS),
   amount: z.number().positive(),
   message: z.string().max(500).optional(),
   isAnonymous: z.boolean().optional(),
   projectId: z.string().optional(),
 });
-
-const BALANCE_FIELD: Record<string, string> = {
-  claude: "claudeBalance",
-  openai: "openaiBalance",
-  gemini: "geminiBalance",
-  openrouter: "openrouterBalance",
-  groq: "groqBalance",
-};
 
 export async function POST(req: NextRequest) {
   const session = await auth();

@@ -2,15 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/encryption";
+import { KEY_FIELD, ALL_PROVIDERS, type Provider } from "@/lib/utils";
 import { z } from "zod";
-
-const FIELD_MAP: Record<string, string> = {
-  claude: "claudeKeyEnc",
-  openai: "openaiKeyEnc",
-  gemini: "geminiKeyEnc",
-  openrouter: "openrouterKeyEnc",
-  groq: "groqKeyEnc",
-};
 
 export async function GET() {
   const session = await auth();
@@ -20,7 +13,8 @@ export async function GET() {
   if (!wallet) return NextResponse.json({});
 
   const result: Record<string, { connected: boolean; masked?: string }> = {};
-  for (const [provider, field] of Object.entries(FIELD_MAP)) {
+  for (const provider of ALL_PROVIDERS) {
+    const field = KEY_FIELD[provider];
     const enc = (wallet as Record<string, unknown>)[field] as string | null;
     if (enc) {
       try {
@@ -37,7 +31,7 @@ export async function GET() {
 }
 
 const saveSchema = z.object({
-  provider: z.enum(["claude", "openai", "gemini", "openrouter", "groq"]),
+  provider: z.enum(ALL_PROVIDERS),
   key: z.string().min(10),
 });
 
@@ -50,7 +44,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const { provider, key } = parsed.data;
-  const field = FIELD_MAP[provider];
+  const field = KEY_FIELD[provider];
   const encrypted = encrypt(key);
 
   await db.wallet.upsert({
@@ -62,7 +56,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-const deleteSchema = z.object({ provider: z.enum(["claude", "openai", "gemini", "openrouter", "groq"]) });
+const deleteSchema = z.object({ provider: z.enum(ALL_PROVIDERS) });
 
 export async function DELETE(req: NextRequest) {
   const session = await auth();
@@ -72,7 +66,7 @@ export async function DELETE(req: NextRequest) {
   const parsed = deleteSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const field = FIELD_MAP[parsed.data.provider];
+  const field = KEY_FIELD[parsed.data.provider];
   await db.wallet.upsert({
     where: { userId: session.user.id },
     create: { userId: session.user.id },

@@ -82,17 +82,35 @@ model Wallet {
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  claudeBalance   Float    @default(0)
-  openaiBalance   Float    @default(0)
-  geminiBalance   Float    @default(0)
-  openrouterBalance Float  @default(0)
-  groqBalance     Float    @default(0)
+  claudeBalance      Float    @default(0)
+  openaiBalance      Float    @default(0)
+  geminiBalance      Float    @default(0)
+  openrouterBalance  Float    @default(0)
+  groqBalance        Float    @default(0)
+  xaiBalance         Float    @default(0)
+  mistralBalance     Float    @default(0)
+  deepseekBalance    Float    @default(0)
+  cohereBalance      Float    @default(0)
+  perplexityBalance  Float    @default(0)
+  togetherBalance    Float    @default(0)
+  fireworksBalance   Float    @default(0)
+  cerebrasBalance    Float    @default(0)
+  ai21Balance        Float    @default(0)
 
-  claudeKeyEnc    String?  @db.Text
-  openaiKeyEnc    String?  @db.Text
-  geminiKeyEnc    String?  @db.Text
-  openrouterKeyEnc String? @db.Text
-  groqKeyEnc      String?  @db.Text
+  claudeKeyEnc      String?  @db.Text
+  openaiKeyEnc      String?  @db.Text
+  geminiKeyEnc      String?  @db.Text
+  openrouterKeyEnc  String?  @db.Text
+  groqKeyEnc        String?  @db.Text
+  xaiKeyEnc         String?  @db.Text
+  mistralKeyEnc     String?  @db.Text
+  deepseekKeyEnc    String?  @db.Text
+  cohereKeyEnc      String?  @db.Text
+  perplexityKeyEnc  String?  @db.Text
+  togetherKeyEnc    String?  @db.Text
+  fireworksKeyEnc   String?  @db.Text
+  cerebrasKeyEnc    String?  @db.Text
+  ai21KeyEnc        String?  @db.Text
 
   autoRefillEnabled   Boolean @default(false)
   autoRefillThreshold Float   @default(0)

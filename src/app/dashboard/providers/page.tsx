@@ -4,14 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon } from "@/components/icons";
+import { ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon, XAIIcon, MistralIcon, DeepSeekIcon, CohereIcon, PerplexityIcon, TogetherIcon, FireworksIcon, CerebrasIcon, AI21Icon } from "@/components/icons";
 
 const PROVIDERS = [
-  { key: "claude", label: "Claude (Anthropic)", Icon: ClaudeIcon, placeholder: "sk-ant-api03-...", docs: "https://console.anthropic.com/account/keys" },
-  { key: "openai", label: "OpenAI (GPT)", Icon: OpenAIIcon, placeholder: "sk-proj-...", docs: "https://platform.openai.com/api-keys" },
-  { key: "gemini", label: "Gemini (Google)", Icon: GeminiIcon, placeholder: "AIza...", docs: "https://aistudio.google.com/app/apikey" },
-  { key: "openrouter", label: "OpenRouter", Icon: OpenRouterIcon, placeholder: "sk-or-v1-...", docs: "https://openrouter.ai/keys" },
-  { key: "groq", label: "Groq", Icon: GroqIcon, placeholder: "gsk_...", docs: "https://console.groq.com/keys" },
+  { key: "claude",     label: "Claude (Anthropic)",  Icon: ClaudeIcon,     placeholder: "sk-ant-api03-...",  docs: "https://console.anthropic.com/account/keys" },
+  { key: "openai",     label: "GPT (OpenAI)",         Icon: OpenAIIcon,     placeholder: "sk-proj-...",        docs: "https://platform.openai.com/api-keys" },
+  { key: "gemini",     label: "Gemini (Google)",      Icon: GeminiIcon,     placeholder: "AIza...",            docs: "https://aistudio.google.com/app/apikey" },
+  { key: "openrouter", label: "OpenRouter",           Icon: OpenRouterIcon, placeholder: "sk-or-v1-...",      docs: "https://openrouter.ai/keys" },
+  { key: "groq",       label: "Groq",                 Icon: GroqIcon,       placeholder: "gsk_...",            docs: "https://console.groq.com/keys" },
+  { key: "xai",        label: "xAI (Grok)",           Icon: XAIIcon,        placeholder: "xai-...",            docs: "https://console.x.ai/" },
+  { key: "mistral",    label: "Mistral AI",           Icon: MistralIcon,    placeholder: "...",                docs: "https://console.mistral.ai/api-keys" },
+  { key: "deepseek",   label: "DeepSeek",             Icon: DeepSeekIcon,   placeholder: "sk-...",             docs: "https://platform.deepseek.com/api_keys" },
+  { key: "cohere",     label: "Cohere",               Icon: CohereIcon,     placeholder: "...",                docs: "https://dashboard.cohere.com/api-keys" },
+  { key: "perplexity", label: "Perplexity AI",        Icon: PerplexityIcon, placeholder: "pplx-...",           docs: "https://www.perplexity.ai/settings/api" },
+  { key: "together",   label: "Together AI",          Icon: TogetherIcon,   placeholder: "...",                docs: "https://api.together.ai/settings/api-keys" },
+  { key: "fireworks",  label: "Fireworks AI",         Icon: FireworksIcon,  placeholder: "fw-...",             docs: "https://fireworks.ai/api-keys" },
+  { key: "cerebras",   label: "Cerebras",             Icon: CerebrasIcon,   placeholder: "csk-...",            docs: "https://cloud.cerebras.ai/" },
+  { key: "ai21",       label: "AI21 Labs",            Icon: AI21Icon,       placeholder: "...",                docs: "https://studio.ai21.com/account/api-key" },
 ];
 
 export default function ProvidersPage() {

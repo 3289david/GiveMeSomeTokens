@@ -5,16 +5,38 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, FuelIcon } from "@/components/icons";
-import { formatTokens } from "@/lib/utils";
+import {
+  ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon,
+  XAIIcon, MistralIcon, DeepSeekIcon, CohereIcon, PerplexityIcon,
+  TogetherIcon, FireworksIcon, CerebrasIcon, AI21Icon, FuelIcon,
+} from "@/components/icons";
+import { formatTokens, ALL_PROVIDERS, providerLabel, type Provider } from "@/lib/utils";
 import { toast } from "sonner";
 
-const PROVIDERS = [
-  { key: "claude", label: "Claude", Icon: ClaudeIcon, color: "border-orange-500 bg-orange-500/10 text-orange-400" },
-  { key: "openai", label: "GPT", Icon: OpenAIIcon, color: "border-green-500 bg-green-500/10 text-green-400" },
-  { key: "gemini", label: "Gemini", Icon: GeminiIcon, color: "border-blue-500 bg-blue-500/10 text-blue-400" },
-  { key: "openrouter", label: "OpenRouter", Icon: OpenRouterIcon, color: "border-purple-500 bg-purple-500/10 text-purple-400" },
-];
+const ICON_MAP: Record<Provider, React.ComponentType<{ className?: string }>> = {
+  claude: ClaudeIcon, openai: OpenAIIcon, gemini: GeminiIcon,
+  openrouter: OpenRouterIcon, groq: GroqIcon, xai: XAIIcon,
+  mistral: MistralIcon, deepseek: DeepSeekIcon, cohere: CohereIcon,
+  perplexity: PerplexityIcon, together: TogetherIcon, fireworks: FireworksIcon,
+  cerebras: CerebrasIcon, ai21: AI21Icon,
+};
+
+const COLOR_MAP: Record<Provider, string> = {
+  claude: "border-orange-500 bg-orange-500/10 text-orange-400",
+  openai: "border-green-500 bg-green-500/10 text-green-400",
+  gemini: "border-blue-500 bg-blue-500/10 text-blue-400",
+  openrouter: "border-purple-500 bg-purple-500/10 text-purple-400",
+  groq: "border-yellow-500 bg-yellow-500/10 text-yellow-400",
+  xai: "border-zinc-400 bg-zinc-400/10 text-zinc-200",
+  mistral: "border-rose-500 bg-rose-500/10 text-rose-400",
+  deepseek: "border-sky-500 bg-sky-500/10 text-sky-400",
+  cohere: "border-teal-500 bg-teal-500/10 text-teal-400",
+  perplexity: "border-indigo-500 bg-indigo-500/10 text-indigo-400",
+  together: "border-pink-500 bg-pink-500/10 text-pink-400",
+  fireworks: "border-amber-500 bg-amber-500/10 text-amber-400",
+  cerebras: "border-red-500 bg-red-500/10 text-red-400",
+  ai21: "border-cyan-500 bg-cyan-500/10 text-cyan-400",
+};
 
 const AMOUNTS = [1, 5, 10, 50];
 
@@ -24,7 +46,7 @@ export default function SupportPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [provider, setProvider] = useState("claude");
+  const [provider, setProvider] = useState<Provider>("claude");
   const [amount, setAmount] = useState(5);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -72,7 +94,7 @@ export default function SupportPage() {
         toast.error(data.error || "Failed to send support");
         return;
       }
-      toast.success(`Sent ${formatTokens(finalAmount)} ${provider === "claude" ? "Claude" : provider === "openai" ? "GPT" : provider === "gemini" ? "Gemini" : "OpenRouter"} tokens!`);
+      toast.success(`Sent ${formatTokens(finalAmount)} ${providerLabel(provider)} tokens!`);
       router.push(`/@${username}`);
     } finally {
       setLoading(false);
@@ -100,20 +122,23 @@ export default function SupportPage() {
           <Card>
             <CardHeader><CardTitle className="text-sm">Choose provider</CardTitle></CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                {PROVIDERS.map(({ key, label, Icon, color }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setProvider(key)}
-                    className={`flex items-center gap-2 rounded-lg border p-3 transition-colors text-sm font-medium ${
-                      provider === key ? color : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    {label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {ALL_PROVIDERS.map((key) => {
+                  const Icon = ICON_MAP[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setProvider(key)}
+                      className={`flex items-center gap-2 rounded-lg border p-3 transition-colors text-sm font-medium ${
+                        provider === key ? COLOR_MAP[key] : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span className="truncate">{providerLabel(key)}</span>
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -209,7 +234,7 @@ export default function SupportPage() {
             className="w-full"
             disabled={loading || !finalAmount}
           >
-            {loading ? "Sending..." : `Send ${finalAmount ? formatTokens(finalAmount) : "?"} ${provider === "claude" ? "Claude" : provider === "openai" ? "GPT" : provider === "gemini" ? "Gemini" : "OpenRouter"} tokens`}
+            {loading ? "Sending..." : `Send ${finalAmount ? formatTokens(finalAmount) : "?"} ${providerLabel(provider)} tokens`}
           </Button>
 
           {!session && (
