@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const wallet = await db.wallet.findUnique({ where: { userId: userId } });
   if (!wallet) return NextResponse.json({ error: "Wallet not found" }, { status: 400 });
 
-  const balanceField = BALANCE_FIELD[item.priceProvider];
+  const balanceField = (BALANCE_FIELD as Record<string, string>)[item.priceProvider];
   const balance = (wallet as Record<string, unknown>)[balanceField] as number;
   if (balance < item.price) return NextResponse.json({ error: "Insufficient balance" }, { status: 400 });
 
