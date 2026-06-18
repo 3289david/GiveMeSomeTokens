@@ -44,6 +44,9 @@ model User {
   aiUsageLogs    AiUsageLog[]
   membershipTiers MembershipTier[]
   posts           Post[]
+
+  receivedSupporterKeys SupporterKey[] @relation("CreatorSupporterKeys")
+  givenSupporterKeys    SupporterKey[] @relation("SupporterGivenKeys")
 }
 
 model Account {
@@ -328,4 +331,21 @@ model MarketplacePurchase {
   amount    Float
   createdAt DateTime @default(now())
   item      MarketplaceItem @relation(fields: [itemId], references: [id])
+}
+
+model SupporterKey {
+  id          String   @id @default(cuid())
+  supporterId String?
+  creatorId   String
+  provider    String
+  keyEnc      String   @db.Text
+  keyHint     String
+  tokenLimit  Float    @default(0)
+  tokensUsed  Float    @default(0)
+  note        String?  @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  creator     User     @relation("CreatorSupporterKeys", fields: [creatorId], references: [id], onDelete: Cascade)
+  supporter   User?    @relation("SupporterGivenKeys", fields: [supporterId], references: [id], onDelete: SetNull)
 }

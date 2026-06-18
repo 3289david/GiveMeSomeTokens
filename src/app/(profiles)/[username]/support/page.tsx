@@ -1,149 +1,96 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, GroqIcon,
-  XAIIcon, MistralIcon, DeepSeekIcon, CohereIcon, PerplexityIcon,
-  TogetherIcon, FireworksIcon, CerebrasIcon, AI21Icon, FuelIcon,
+  XAIIcon, MistralIcon, DeepSeekIcon, FuelIcon,
 } from "@/components/icons";
-import { formatTokens, ALL_PROVIDERS, providerLabel, type Provider } from "@/lib/utils";
 import { toast } from "sonner";
 
-const ICON_MAP: Record<Provider, React.ComponentType<{ className?: string }>> = {
-  claude: ClaudeIcon, openai: OpenAIIcon, gemini: GeminiIcon,
-  openrouter: OpenRouterIcon, groq: GroqIcon, xai: XAIIcon,
-  mistral: MistralIcon, deepseek: DeepSeekIcon, cohere: CohereIcon,
-  perplexity: PerplexityIcon, together: TogetherIcon, fireworks: FireworksIcon,
-  cerebras: CerebrasIcon, ai21: AI21Icon,
-};
+const PROVIDERS = [
+  { id: "claude",      label: "Claude",      Icon: ClaudeIcon,      hint: "sk-ant-api03-...",      color: "border-orange-500 bg-orange-500/10 text-orange-400", note: "Charged to your Anthropic account" },
+  { id: "openai",      label: "GPT / OpenAI", Icon: OpenAIIcon,     hint: "sk-proj-...",            color: "border-green-500 bg-green-500/10 text-green-400",  note: "Charged to your OpenAI account" },
+  { id: "gemini",      label: "Gemini",       Icon: GeminiIcon,     hint: "AIza...",                color: "border-blue-500 bg-blue-500/10 text-blue-400",    note: "Charged to your Google AI account" },
+  { id: "groq",        label: "Groq",         Icon: GroqIcon,       hint: "gsk_...",                color: "border-yellow-500 bg-yellow-500/10 text-yellow-400", note: "Charged to your Groq account" },
+  { id: "xai",         label: "Grok / xAI",  Icon: XAIIcon,        hint: "xai-...",                color: "border-zinc-400 bg-zinc-400/10 text-zinc-300",    note: "Charged to your xAI account" },
+  { id: "mistral",     label: "Mistral",      Icon: MistralIcon,    hint: "...",                    color: "border-rose-500 bg-rose-500/10 text-rose-400",    note: "Charged to your Mistral account" },
+  { id: "deepseek",    label: "DeepSeek",     Icon: DeepSeekIcon,   hint: "sk-...",                 color: "border-sky-500 bg-sky-500/10 text-sky-400",       note: "Charged to your DeepSeek account" },
+  { id: "openrouter",  label: "OpenRouter",   Icon: OpenRouterIcon, hint: "sk-or-v1-...",           color: "border-purple-500 bg-purple-500/10 text-purple-400", note: "Charged to your OpenRouter credits" },
+];
 
-const COLOR_MAP: Record<Provider, string> = {
-  claude: "border-orange-500 bg-orange-500/10 text-orange-400",
-  openai: "border-green-500 bg-green-500/10 text-green-400",
-  gemini: "border-blue-500 bg-blue-500/10 text-blue-400",
-  openrouter: "border-purple-500 bg-purple-500/10 text-purple-400",
-  groq: "border-yellow-500 bg-yellow-500/10 text-yellow-400",
-  xai: "border-zinc-400 bg-zinc-400/10 text-zinc-200",
-  mistral: "border-rose-500 bg-rose-500/10 text-rose-400",
-  deepseek: "border-sky-500 bg-sky-500/10 text-sky-400",
-  cohere: "border-teal-500 bg-teal-500/10 text-teal-400",
-  perplexity: "border-indigo-500 bg-indigo-500/10 text-indigo-400",
-  together: "border-pink-500 bg-pink-500/10 text-pink-400",
-  fireworks: "border-amber-500 bg-amber-500/10 text-amber-400",
-  cerebras: "border-red-500 bg-red-500/10 text-red-400",
-  ai21: "border-cyan-500 bg-cyan-500/10 text-cyan-400",
-};
-
-const AMOUNTS = [1, 5, 10, 50];
+const LIMITS = [
+  { label: "5M tokens", value: 5 },
+  { label: "10M tokens", value: 10 },
+  { label: "50M tokens", value: 50 },
+  { label: "100M tokens", value: 100 },
+];
 
 export default function SupportPage() {
   const params = useParams();
   const username = params.username as string;
-  const { data: session, status } = useSession();
-  const router = useRouter();
 
-  const [provider, setProvider] = useState<Provider>("claude");
-  const [amount, setAmount] = useState(5);
-  const [customAmount, setCustomAmount] = useState("");
-  const [message, setMessage] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [projectId, setProjectId] = useState<string | undefined>();
-  const [projects, setProjects] = useState<Array<{ id: string; name: string }>>([]);
-  const [loading, setLoading] = useState(false);
   const [creatorName, setCreatorName] = useState(username);
+  const [provider, setProvider] = useState("claude");
+  const [apiKey, setApiKey] = useState("");
+  const [tokenLimit, setTokenLimit] = useState(10);
+  const [customLimit, setCustomLimit] = useState("");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     fetch(`/api/users/${username}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.name) setCreatorName(d.name);
-        if (d.projects) setProjects(d.projects);
-      });
+      .then(r => r.json())
+      .then(d => { if (d.name) setCreatorName(d.name); });
   }, [username]);
 
-  const finalAmount = customAmount ? parseFloat(customAmount) : amount;
+  const selectedProvider = PROVIDERS.find(p => p.id === provider)!;
+  const finalLimit = customLimit ? parseFloat(customLimit) : tokenLimit;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session) {
-      router.push(`/login?callbackUrl=/@${username}/support`);
-      return;
-    }
-    if (!finalAmount || finalAmount <= 0) return;
+    if (!apiKey.trim()) { toast.error("Paste your API key"); return; }
+    if (!finalLimit || finalLimit <= 0) { toast.error("Set a token limit"); return; }
 
     setLoading(true);
     try {
-      const res = await fetch("/api/support", {
+      const res = await fetch("/api/supporter-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           creatorUsername: username,
           provider,
-          amount: finalAmount,
-          message: message.trim() || undefined,
-          isAnonymous,
-          projectId,
+          apiKey: apiKey.trim(),
+          tokenLimit: finalLimit,
+          note: note.trim() || undefined,
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to send support");
-        return;
-      }
-      toast.success(`Sent ${formatTokens(finalAmount)} ${providerLabel(provider)} tokens!`);
-      router.push(`/@${username}`);
+      if (!res.ok) { toast.error(data.error || "Failed"); return; }
+      setDone(true);
     } finally {
       setLoading(false);
     }
   };
 
-  if (status === "loading") return null;
-
-  if (!session) {
+  if (done) {
     return (
-      <div className="min-h-screen bg-zinc-950 py-10 px-4">
-        <div className="max-w-lg mx-auto">
-          <Link href={`/@${username}`} className="text-sm text-zinc-500 hover:text-zinc-300 mb-6 block">
-            Back to @{username}
-          </Link>
-          <div className="flex items-center gap-3 mb-8">
-            <FuelIcon className="w-6 h-6 text-orange-400" />
-            <div>
-              <h1 className="text-xl font-bold">Fuel {creatorName}</h1>
-              <p className="text-sm text-zinc-500">Send AI tokens instead of money</p>
-            </div>
-          </div>
-          <Card className="border-orange-500/30">
-            <CardContent className="pt-8 pb-8 text-center">
-              <div className="text-4xl mb-4">🔑</div>
-              <h2 className="text-lg font-semibold mb-2">Sign in to send tokens</h2>
-              <p className="text-zinc-400 text-sm mb-6 max-w-xs mx-auto">
-                Create a free account, connect your AI provider key, and fuel {creatorName} with tokens.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button asChild>
-                  <Link href={`/login?mode=register&callbackUrl=/@${username}/support`}>Create free account</Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link href={`/login?callbackUrl=/@${username}/support`}>Sign in</Link>
-                </Button>
-              </div>
-              <div className="mt-6 pt-6 border-t border-zinc-800 space-y-2 text-left max-w-xs mx-auto">
-                {["Connect your Claude, OpenAI, or any of 14 provider keys", "Tokens go straight into the creator's AI wallet", "No middleman — your key stays encrypted"].map(f => (
-                  <div key={f} className="flex items-start gap-2 text-xs text-zinc-500">
-                    <svg className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {f}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">🎉</div>
+          <h1 className="text-2xl font-bold mb-2">You&apos;re supporting {creatorName}!</h1>
+          <p className="text-zinc-400 text-sm mb-6">
+            Your {selectedProvider.label} API key is now connected. {creatorName} can use up to{" "}
+            <span className="text-orange-400 font-medium">{finalLimit}M tokens</span> from your account.
+            You&apos;ll be billed directly by {selectedProvider.label} for actual usage.
+          </p>
+          <Button asChild>
+            <Link href={`/@${username}`}>Back to @{username}</Link>
+          </Button>
         </div>
       </div>
     );
@@ -153,136 +100,125 @@ export default function SupportPage() {
     <div className="min-h-screen bg-zinc-950 py-10 px-4">
       <div className="max-w-lg mx-auto">
         <Link href={`/@${username}`} className="text-sm text-zinc-500 hover:text-zinc-300 mb-6 block">
-          Back to @{username}
+          ← Back to @{username}
         </Link>
+
         <div className="flex items-center gap-3 mb-8">
           <FuelIcon className="w-6 h-6 text-orange-400" />
           <div>
             <h1 className="text-xl font-bold">Fuel {creatorName}</h1>
-            <p className="text-sm text-zinc-500">Send AI tokens instead of money</p>
+            <p className="text-sm text-zinc-500">Donate your AI tokens — they use your API key, you pay the bill</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* How it works */}
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 mb-6">
+          <div className="text-xs font-semibold text-zinc-400 mb-3">How it works</div>
+          <div className="space-y-2.5">
+            {[
+              ["1.", "Paste your API key below (Claude, OpenAI, etc.)"],
+              ["2.", `Set a token limit — how many tokens ${creatorName} can use`],
+              ["3.", "They use those tokens via GMT. Your API account gets billed for real usage."],
+            ].map(([n, t]) => (
+              <div key={n} className="flex gap-2.5 text-xs text-zinc-400">
+                <span className="text-orange-400 font-bold flex-shrink-0">{n}</span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Provider */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Choose provider</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {ALL_PROVIDERS.map((key) => {
-                  const Icon = ICON_MAP[key];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setProvider(key)}
-                      className={`flex items-center gap-2 rounded-lg border p-3 transition-colors text-sm font-medium ${
-                        provider === key ? COLOR_MAP[key] : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span className="truncate">{providerLabel(key)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Amount */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Amount (millions of tokens)</CardTitle></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-2 mb-3">
-                {AMOUNTS.map((a) => (
+          <div>
+            <label className="text-sm font-medium text-zinc-300 block mb-2">Your API provider</label>
+            <div className="grid grid-cols-2 gap-2">
+              {PROVIDERS.map(p => {
+                const Icon = p.Icon;
+                return (
                   <button
-                    key={a}
+                    key={p.id}
                     type="button"
-                    onClick={() => { setAmount(a); setCustomAmount(""); }}
-                    className={`rounded-lg border py-2 text-sm font-mono font-semibold transition-colors ${
-                      amount === a && !customAmount
-                        ? "border-orange-500 bg-orange-500/10 text-orange-400"
-                        : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
-                    }`}
+                    onClick={() => setProvider(p.id)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${provider === p.id ? p.color + " ring-1 ring-current" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
                   >
-                    {a}M
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {p.label}
                   </button>
-                ))}
-              </div>
-              <input
-                type="number"
-                placeholder="Custom amount (M)"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full h-9 rounded-md border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                min="0.001"
-                step="0.001"
-              />
-            </CardContent>
-          </Card>
+                );
+              })}
+            </div>
+          </div>
 
-          {/* Project */}
-          {projects.length > 0 && (
-            <Card>
-              <CardHeader><CardTitle className="text-sm">Support a specific project (optional)</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setProjectId(undefined)}
-                    className={`rounded-lg border p-2 text-sm transition-colors ${!projectId ? "border-orange-500 bg-orange-500/10 text-orange-400" : "border-zinc-700 bg-zinc-800 text-zinc-400"}`}
-                  >
-                    General support
-                  </button>
-                  {projects.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setProjectId(p.id)}
-                      className={`rounded-lg border p-2 text-sm transition-colors ${projectId === p.id ? "border-orange-500 bg-orange-500/10 text-orange-400" : "border-zinc-700 bg-zinc-800 text-zinc-400"}`}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* API Key */}
+          <div>
+            <label className="text-sm font-medium text-zinc-300 block mb-1">
+              Your {selectedProvider.label} API key
+            </label>
+            <p className="text-xs text-zinc-500 mb-2">{selectedProvider.note}</p>
+            <Input
+              type="password"
+              placeholder={selectedProvider.hint}
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              className="font-mono text-sm"
+              required
+            />
+            <p className="text-xs text-zinc-600 mt-1.5">
+              Your key is encrypted and stored securely. It is never shown in plaintext again.
+            </p>
+          </div>
 
-          {/* Message */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Message (optional)</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <textarea
-                placeholder={`Say something nice to ${creatorName}...`}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
-                rows={3}
-                maxLength={500}
-              />
-              <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isAnonymous}
-                  onChange={(e) => setIsAnonymous(e.target.checked)}
-                  className="rounded border-zinc-600"
-                />
-                Send anonymously
-              </label>
-            </CardContent>
-          </Card>
+          {/* Token limit */}
+          <div>
+            <label className="text-sm font-medium text-zinc-300 block mb-2">Token limit (how much they can use)</label>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {LIMITS.map(l => (
+                <button
+                  key={l.value}
+                  type="button"
+                  onClick={() => { setTokenLimit(l.value); setCustomLimit(""); }}
+                  className={`rounded-lg border px-2 py-2 text-xs font-medium transition-colors ${tokenLimit === l.value && !customLimit ? "border-orange-500 bg-orange-500/10 text-orange-400" : "border-zinc-700 text-zinc-400 hover:border-zinc-500"}`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <Input
+              type="number"
+              placeholder="Custom amount (M tokens)"
+              value={customLimit}
+              onChange={e => setCustomLimit(e.target.value)}
+              min="1"
+              step="1"
+              className="text-sm"
+            />
+            {finalLimit > 0 && (
+              <p className="text-xs text-zinc-500 mt-1.5">
+                ≈ {finalLimit}M tokens · estimated cost varies by provider and models used
+              </p>
+            )}
+          </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            variant="gradient"
-            className="w-full"
-            disabled={loading || !finalAmount}
-          >
-            {loading ? "Sending..." : `Send ${finalAmount ? formatTokens(finalAmount) : "?"} ${providerLabel(provider)} tokens`}
+          {/* Note */}
+          <div>
+            <label className="text-sm font-medium text-zinc-300 block mb-1">Note (optional)</label>
+            <Input
+              placeholder={`Leave ${creatorName} a message...`}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              maxLength={300}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? "Connecting key..." : `Donate ${finalLimit}M ${selectedProvider.label} tokens to ${creatorName}`}
           </Button>
 
+          <p className="text-xs text-zinc-600 text-center">
+            By submitting, you allow {creatorName} to use up to {finalLimit}M tokens from your {selectedProvider.label} account.
+            Actual billing happens at {selectedProvider.label} — not through GiveMeSomeTokens.
+          </p>
         </form>
       </div>
     </div>

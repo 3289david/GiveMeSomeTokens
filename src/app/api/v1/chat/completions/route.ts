@@ -78,28 +78,51 @@ export async function POST(req: NextRequest) {
   }
 
   const keyEncField = KEY_FIELD[provider as keyof typeof KEY_FIELD];
-  const keyEnc = keyEncField ? (wallet as Record<string, unknown>)[keyEncField] as string | null : null;
-  if (!keyEnc) {
-    return NextResponse.json(
-      { error: { message: `No ${provider} API key connected. Visit /dashboard/providers.`, type: "invalid_request_error" } },
-      { status: 400 }
-    );
-  }
-
-  const balanceFieldName = BALANCE_FIELD[provider as keyof typeof BALANCE_FIELD];
-  const balance = balanceFieldName ? (wallet as Record<string, unknown>)[balanceFieldName] as number : 0;
-  if (balance <= 0) {
-    return NextResponse.json(
-      { error: { message: `Insufficient ${provider} token balance.`, type: "insufficient_quota" } },
-      { status: 429 }
-    );
-  }
+  const ownKeyEnc = keyEncField ? (wallet as Record<string, unknown>)[keyEncField] as string | null : null;
 
   let apiKey: string;
-  try {
-    apiKey = decrypt(keyEnc);
-  } catch {
-    return NextResponse.json({ error: { message: "Failed to decrypt API key.", type: "api_error" } }, { status: 500 });
+  let supporterKeyId: string | null = null;
+
+  if (ownKeyEnc) {
+    // Creator has their own key — use it
+    try {
+      apiKey = decrypt(ownKeyEnc);
+    } catch {
+      return NextResponse.json({ error: { message: "Failed to decrypt API key.", type: "api_error" } }, { status: 500 });
+    }
+  } else {
+    // No personal key — check supporter key pool
+    const supporterKey = await db.supporterKey.findFirst({
+      where: {
+        creatorId: keyRecord.userId,
+        provider,
+        active: true,
+      },
+      orderBy: { createdAt: "asc" }, // oldest first (FIFO)
+    });
+
+    if (!supporterKey) {
+      return NextResponse.json(
+        { error: { message: `No ${provider} API key available. Connect your own key at /dashboard/providers or ask supporters to donate one.`, type: "invalid_request_error" } },
+        { status: 400 }
+      );
+    }
+
+    // Check token limit (0 = unlimited)
+    if (supporterKey.tokenLimit > 0 && supporterKey.tokensUsed >= supporterKey.tokenLimit) {
+      await db.supporterKey.update({ where: { id: supporterKey.id }, data: { active: false } });
+      return NextResponse.json(
+        { error: { message: `Supporter key token limit reached. The supporter's key has been exhausted.`, type: "insufficient_quota" } },
+        { status: 429 }
+      );
+    }
+
+    try {
+      apiKey = decrypt(supporterKey.keyEnc);
+    } catch {
+      return NextResponse.json({ error: { message: "Failed to decrypt supporter API key.", type: "api_error" } }, { status: 500 });
+    }
+    supporterKeyId = supporterKey.id;
   }
 
   const endpoint = PROVIDER_ENDPOINTS[provider] ?? PROVIDER_ENDPOINTS.openrouter;
@@ -140,7 +163,7 @@ export async function POST(req: NextRequest) {
     responseHeaders.set("Content-Type", "text/event-stream");
     responseHeaders.set("Cache-Control", "no-cache");
     responseHeaders.set("Connection", "keep-alive");
-    await logUsage(keyRecord.id, keyRecord.userId, provider, model, 0.001, db);
+    await logUsage(keyRecord.id, keyRecord.userId, provider, model, 0.001, supporterKeyId, db);
     return new NextResponse(response.body, { status: response.status, headers: responseHeaders });
   }
 
@@ -154,17 +177,23 @@ export async function POST(req: NextRequest) {
     if (total > 0) tokensUsed = total / 1_000_000;
   }
 
-  if (response.ok) await logUsage(keyRecord.id, keyRecord.userId, provider, model, tokensUsed, db);
+  if (response.ok) await logUsage(keyRecord.id, keyRecord.userId, provider, model, tokensUsed, supporterKeyId, db);
 
   return NextResponse.json(data, { status: response.status });
 }
 
-async function logUsage(keyId: string, userId: string, provider: string, model: string, tokensUsed: number, prisma: typeof db) {
+async function logUsage(
+  keyId: string, userId: string, provider: string, model: string,
+  tokensUsed: number, supporterKeyId: string | null, prisma: typeof db
+) {
   const field = BALANCE_FIELD[provider as keyof typeof BALANCE_FIELD];
   await Promise.all([
     prisma.apiUsageLog.create({ data: { keyId, provider, model, tokensUsed } }),
     prisma.gmtApiKey.update({ where: { id: keyId }, data: { totalTokensUsed: { increment: tokensUsed } } }),
-    field ? prisma.wallet.update({ where: { userId }, data: { [field]: { decrement: tokensUsed } } }) : Promise.resolve(),
+    // If using own key, deduct from wallet balance; if supporter key, track against that key
+    supporterKeyId
+      ? prisma.supporterKey.update({ where: { id: supporterKeyId }, data: { tokensUsed: { increment: tokensUsed } } })
+      : (field ? prisma.wallet.update({ where: { userId }, data: { [field]: { decrement: tokensUsed } } }) : Promise.resolve()),
     prisma.aiUsageLog.create({ data: { userId, provider, model, tokensUsed, isPublic: false } }),
   ]);
 }
