@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-
-const PROVIDERS = ["claude", "openai", "gemini", "openrouter", "groq"];
+import { ALL_PROVIDERS, providerLabel } from "@/lib/utils";
 
 export default function TokenTopup() {
   const [provider, setProvider] = useState("claude");
@@ -38,14 +37,14 @@ export default function TokenTopup() {
     <Card>
       <CardHeader><CardTitle className="text-sm">Add Tokens to Wallet</CardTitle></CardHeader>
       <CardContent>
-        <p className="text-xs text-zinc-500 mb-4">Add test tokens to your wallet. In production, tokens come from supporters.</p>
+        <p className="text-xs text-zinc-500 mb-4">Add tokens to your wallet — this represents tokens you can send to creators.</p>
         <form onSubmit={handleTopup} className="flex gap-2 flex-wrap">
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
             className="h-9 rounded-md border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-100"
           >
-            {PROVIDERS.map(p => <option key={p} value={p}>{p}</option>)}
+            {ALL_PROVIDERS.map(p => <option key={p} value={p}>{providerLabel(p)}</option>)}
           </select>
           <Input
             type="number"

@@ -3,7 +3,24 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mine = searchParams.get("mine") === "true";
+
+  if (mine) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const items = await db.marketplaceItem.findMany({
+      where: { creatorId: session.user.id },
+      include: {
+        _count: { select: { purchases: true } },
+        purchases: { select: { amount: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ items });
+  }
+
   const items = await db.marketplaceItem.findMany({
     where: { published: true },
     orderBy: { createdAt: "desc" },
@@ -33,4 +50,13 @@ export async function POST(req: NextRequest) {
     data: { creatorId: session.user.id, ...parsed.data, published: true },
   });
   return NextResponse.json({ item });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await req.json();
+  await db.marketplaceItem.deleteMany({ where: { id, creatorId: session.user.id } });
+  return NextResponse.json({ ok: true });
 }

@@ -28,6 +28,7 @@ const schema = z.object({
   provider: z.enum(ALL_PROVIDERS),
   amount: z.number().positive(),
   tier: z.string().optional(),
+  tierId: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const { creatorUsername, provider, amount, tier } = parsed.data;
+  const { creatorUsername, provider, amount, tier, tierId } = parsed.data;
 
   const creator = await db.user.findUnique({ where: { username: creatorUsername } });
   if (!creator) return NextResponse.json({ error: "Creator not found" }, { status: 404 });
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
         provider,
         amount,
         tier,
+        tierId: tierId || null,
         lastBilledAt: now,
         nextBillAt: addMonths(now, 1),
       },

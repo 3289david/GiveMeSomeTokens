@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClaudeIcon, OpenAIIcon, GeminiIcon, OpenRouterIcon, FuelIcon } from "@/components/icons";
 import { formatTokens, providerLabel } from "@/lib/utils";
+import MembershipSection from "./membership-section";
+import PostsFeed from "./posts-feed";
 
 async function getCreator(username: string) {
   return db.user.findUnique({
@@ -16,6 +18,7 @@ async function getCreator(username: string) {
     include: {
       projects: true,
       goals: { where: { completed: false } },
+      membershipTiers: { where: { active: true }, orderBy: { position: "asc" } },
       supportReceived: {
         where: { isPublic: true },
         include: { supporter: { select: { name: true, username: true, image: true } } },
@@ -49,6 +52,29 @@ function getTier(total: number): { label: string; variant: "bronze" | "silver" |
   return { label: "", variant: null };
 }
 
+async function getViewerSubscriptions(viewerId: string, creatorId: string) {
+  return db.subscription.findMany({
+    where: { supporterId: viewerId, creatorId, active: true },
+    select: { tierId: true },
+  });
+}
+
+async function getPosts(creatorId: string, viewerTierIds: string[]) {
+  const posts = await db.post.findMany({
+    where: { creatorId },
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    include: { memberTier: { select: { id: true, name: true, color: true, emoji: true } } },
+  });
+
+  return posts.map(p => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    locked: !p.isPublic && !viewerTierIds.includes(p.tierId ?? ""),
+    content: (!p.isPublic && !viewerTierIds.includes(p.tierId ?? "")) ? null : p.content,
+  }));
+}
+
 export default async function CreatorProfilePage({
   params,
 }: {
@@ -61,6 +87,18 @@ export default async function CreatorProfilePage({
   const { map: tokenTotals, grand: grandTotal } = await getTokenTotals(creator.id);
   const tier = getTier(grandTotal);
   const session = await auth();
+
+  // Get viewer's active subscriptions to this creator
+  let viewerTierIds: string[] = [];
+  let activeTierIds: string[] = [];
+  if (session?.user?.id && session.user.id !== creator.id) {
+    const subs = await getViewerSubscriptions(session.user.id, creator.id);
+    viewerTierIds = subs.map(s => s.tierId!).filter(Boolean);
+    activeTierIds = viewerTierIds;
+  }
+
+  // Fetch posts with access control
+  const posts = await getPosts(creator.id, viewerTierIds);
 
   const providers = [
     { key: "claude", Icon: ClaudeIcon, label: "Claude", color: "text-orange-400" },
@@ -152,7 +190,7 @@ export default async function CreatorProfilePage({
             )}
           </div>
 
-          {/* Right: Support + Feed */}
+          {/* Right: Support + Memberships + Posts + Feed */}
           <div className="lg:col-span-2 space-y-6">
             {/* Fuel My Agent CTA */}
             <div className="rounded-xl border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-purple-500/10 p-6">
@@ -169,6 +207,15 @@ export default async function CreatorProfilePage({
                 </Link>
               </Button>
             </div>
+
+            {/* Membership Tiers */}
+            {creator.membershipTiers.length > 0 && (
+              <MembershipSection
+                tiers={creator.membershipTiers}
+                creatorUsername={username}
+                activeTierIds={activeTierIds}
+              />
+            )}
 
             {/* Goals */}
             {creator.goals.length > 0 && (
@@ -198,6 +245,11 @@ export default async function CreatorProfilePage({
               </Card>
             )}
 
+            {/* Posts Feed */}
+            {posts.length > 0 && (
+              <PostsFeed posts={posts} />
+            )}
+
             {/* Recent Supporters */}
             <Card>
               <CardHeader><CardTitle className="text-sm">Recent Supporters</CardTitle></CardHeader>
@@ -215,7 +267,7 @@ export default async function CreatorProfilePage({
                           <div className="text-sm font-medium">
                             {s.isAnonymous ? "Anonymous" : (s.supporter.name ?? s.supporter.username ?? "Someone")}
                           </div>
-                          {s.message && <div className="text-xs text-zinc-500 truncate">"{s.message}"</div>}
+                          {s.message && <div className="text-xs text-zinc-500 truncate">&quot;{s.message}&quot;</div>}
                         </div>
                         <ProviderBadge provider={s.provider} amount={s.amount} />
                       </div>
